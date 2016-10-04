@@ -22,6 +22,11 @@ inline void SafeRelease(Interface *& pInterfaceToRelease)
 #include <opencv2\opencv.hpp>
 using namespace cv;
 
+/// <summary>
+/// Convert depthframe in IDepthFrame* to a CV_16U Mat.
+/// </summary>
+/// <param name="depthframe">The pointer to the obtained depth frame</param>
+/// <returns>Returns a Mat in CV_16U containing the depth frame</returns>
 Mat depth2mat(IDepthFrame* depthframe)
 {
   IFrameDescription* size = NULL;
@@ -46,6 +51,11 @@ Mat depth2mat(IDepthFrame* depthframe)
   return frame;
 }
 
+/// <summary>
+/// Convert colorframe in IColorFrame* to a CV_8UC3 Mat.
+/// </summary>
+/// <param name="colorframe">The pointer to the obtained color frame</param>
+/// <returns>Returns a Mat in CV_8UC3 containing the color frame</returns>
 Mat color2mat(IColorFrame* colorframe)
 {
   IFrameDescription* size = NULL;
@@ -73,6 +83,11 @@ Mat color2mat(IColorFrame* colorframe)
   return frame;
 }
 
+/// <summary>
+/// Convert infraredframe in IInfraredFrame* to a CV_16U Mat.
+/// </summary>
+/// <param name="infraframe">The pointer to the obtained infrared frame</param>
+/// <returns>Returns a Mat in CV_16U containing the infrared frame</returns>
 Mat infra2mat(IInfraredFrame* infraframe)
 {
   IFrameDescription* size = NULL;
@@ -95,6 +110,54 @@ Mat infra2mat(IInfraredFrame* infraframe)
     }
   }
   return frame;
+}
+
+/// <summary>
+/// Combine CV_16U infrared frame and CV_16U depth frame into a CV_8UC3 mat
+/// </summary>
+/// <param name="inframat">The Mat structure containing infrared frame</param>
+/// <param name="depthmat">The Mat structure containing depth frame</param>
+/// <returns>Returns a Mat in CV_8UC3 containing the combined frame</returns>
+Mat infraDepth2Mat(Mat inframat, Mat depthmat)
+{
+	if (inframat.size() != depthmat.size())
+		return Mat();
+	Size size = inframat.size();
+	Mat result(size, CV_8UC3, Scalar::all(0));
+	for (int i = 0; i < size.height; i++)
+	{
+		for (int j = 0; j < size.width; j++)
+		{
+			result.at<Vec3b>(i, j)[0] = inframat.at<unsigned short>(i, j) / 256;
+			result.at<Vec3b>(i, j)[1] = depthmat.at<unsigned short>(i, j) / 256 * 50;
+			result.at<Vec3b>(i, j)[2] = depthmat.at<unsigned short>(i, j) % 256;
+		}
+	}
+	return result;
+}
+
+/// <summary>
+/// Combine CV_16U infrared frame and CV_16U depth frame into a CV_8UC3 mat
+/// </summary>
+/// <param name="inframat">The Mat structure containing infrared frame</param>
+/// <param name="depthmat">The Mat structure containing depth frame</param>
+/// <returns>Returns a Mat in CV_8UC3 containing the combined frame</returns>
+Mat infraDepth2Mat(Mat inframat, Mat depthmat)
+{
+	if (inframat.size() != depthmat.size())
+		return Mat();
+	Size size = inframat.size();
+	Mat result(size, CV_8UC3, Scalar::all(0));
+	for (int i = 0; i < size.height; i++)
+	{
+		for (int j = 0; j < size.width; j++)
+		{
+			result.at<Vec3b>(i, j)[0] = inframat.at<unsigned short>(i, j) / 256;
+			result.at<Vec3b>(i, j)[1] = depthmat.at<unsigned short>(i, j) / 256 * 50;
+			result.at<Vec3b>(i, j)[2] = depthmat.at<unsigned short>(i, j) % 256;
+		}
+	}
+	return result;
 }
 #endif // _USE_OPENCV
 
@@ -131,6 +194,18 @@ public:
     if (sensor != NULL) { sensor->Close(); sensor->Release(); sensor = NULL; }
   }
 
+	void close()
+	{
+		SafeRelease(coordinatemapper);
+		SafeRelease(multireader);
+		SafeRelease(frame);
+		if (sensor != NULL) { sensor->Close(); sensor->Release(); sensor = NULL; }
+	}
+
+	/// <summary>
+	/// Initialize the Kinect sensor using the default sensor
+	/// </summary>
+	/// <param name="sources">The data streams to collect from the sensor. </param>
   HRESULT init(FrameSourceTypes sources)
   {
     HRESULT result;
@@ -146,6 +221,9 @@ public:
     return result;
   }
 
+	/// <summary>
+	/// Update the data streams specified.
+	/// </summary>
   HRESULT update()
   {
     HRESULT result;
@@ -154,6 +232,10 @@ public:
     return result;
   }
 
+	/// <summary>
+	/// Get the depth frame and store it to the pointer passed as parameter
+	/// </summary>
+	/// <param name="depth">Pointer to a pointer to store the depth frame </param>
   HRESULT getDepthFrame(IDepthFrame** depth)
   {
     HRESULT result;
@@ -171,6 +253,10 @@ public:
     return result;
   }
 
+	/// <summary>
+	/// Get the color frame and store it to the pointer passed as parameter
+	/// </summary>
+	/// <param name="depth">Pointer to a pointer to store the color frame </param>
   HRESULT getColorFrame(IColorFrame** color)
   {
     HRESULT result;
@@ -188,6 +274,10 @@ public:
     return result;
   }
   
+	/// <summary>
+	/// Get the body frame and store it to the pointer passed as parameter
+	/// </summary>
+	/// <param name="depth">Pointer to a pointer to store the body frame </param>
   HRESULT getBodyFrame(IBodyFrame** body)
   {
     HRESULT result;
@@ -205,6 +295,10 @@ public:
     return result;
   }
 
+	/// <summary>
+	/// Get the infra frame and store it to the pointer passed as parameter
+	/// </summary>
+	/// <param name="depth">Pointer to a pointer to store the infra frame </param>
   HRESULT getInfraredFrame(IInfraredFrame** infra)
   {
     HRESULT result;
@@ -223,6 +317,10 @@ public:
   }
 
 #ifdef _USE_OPENCV
+	/// <summary>
+	/// Get the depth frame and store it to a CV_16U Mat class
+	/// </summary>
+	/// <returns>Pointer to a pointer to store the depth frame </returns>
   Mat getDepthMat()
   {
     HRESULT result;
@@ -237,6 +335,10 @@ public:
     return Mat();
   }
 
+	/// <summary>
+	/// Get the color frame and store it to a CV_8UC3 Mat class
+	/// </summary>
+	/// <returns>Pointer to a pointer to store the color frame </returns>
   Mat getColorMat()
   {
     HRESULT result;
@@ -251,6 +353,10 @@ public:
     return Mat();
   }
 
+	/// <summary>
+	/// Get the infrared frame and store it to a CV_16U Mat class
+	/// </summary>
+	/// <returns>Pointer to a pointer to store the infrared frame </returns>
   Mat getInfraredMat()
   {
     HRESULT result;
