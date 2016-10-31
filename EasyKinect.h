@@ -112,53 +112,36 @@ Mat infra2mat(IInfraredFrame* infraframe)
   return frame;
 }
 
-/// <summary>
-/// Combine CV_16U infrared frame and CV_16U depth frame into a CV_8UC3 mat
-/// </summary>
-/// <param name="inframat">The Mat structure containing infrared frame</param>
-/// <param name="depthmat">The Mat structure containing depth frame</param>
-/// <returns>Returns a Mat in CV_8UC3 containing the combined frame</returns>
-Mat infraDepth2Mat(Mat inframat, Mat depthmat)
+Mat bodyindex2mat(IBodyIndexFrame* bodyindex)
 {
-	if (inframat.size() != depthmat.size())
-		return Mat();
-	Size size = inframat.size();
-	Mat result(size, CV_8UC3, Scalar::all(0));
-	for (int i = 0; i < size.height; i++)
+	IFrameDescription* size = NULL;
+	bodyindex->get_FrameDescription(&size);
+	int height = 0, width = 0;
+	size->get_Height(&height);
+	size->get_Width(&width);
+	SafeRelease(size);
+	Mat frame(height, width, CV_8U, Scalar::all(0));
+	BYTE* buffer = NULL;
+	UINT buffersize = 0;
+	if (SUCCEEDED(bodyindex->AccessUnderlyingBuffer(&buffersize, &buffer)))
 	{
-		for (int j = 0; j < size.width; j++)
+		for (int i = 0; i < height; i++)
 		{
-			result.at<Vec3b>(i, j)[0] = inframat.at<unsigned short>(i, j) / 256;
-			result.at<Vec3b>(i, j)[1] = depthmat.at<unsigned short>(i, j) / 256 * 50;
-			result.at<Vec3b>(i, j)[2] = depthmat.at<unsigned short>(i, j) % 256;
+			for (int j = 0; j < width; j++)
+			{
+				frame.at<uchar>(i, j) = buffer[i*width + j];
+			}
 		}
+		return frame;
 	}
-	return result;
+#ifdef _LJX_DEBUG
+	else
+		cout << "bodyindex->AccessUnderlyingBuffer failed." << endl;
+#endif
+	return Mat();
 }
 
-/// <summary>
-/// Combine CV_16U infrared frame and CV_16U depth frame into a CV_8UC3 mat
-/// </summary>
-/// <param name="inframat">The Mat structure containing infrared frame</param>
-/// <param name="depthmat">The Mat structure containing depth frame</param>
-/// <returns>Returns a Mat in CV_8UC3 containing the combined frame</returns>
-Mat infraDepth2Mat(Mat inframat, Mat depthmat)
-{
-	if (inframat.size() != depthmat.size())
-		return Mat();
-	Size size = inframat.size();
-	Mat result(size, CV_8UC3, Scalar::all(0));
-	for (int i = 0; i < size.height; i++)
-	{
-		for (int j = 0; j < size.width; j++)
-		{
-			result.at<Vec3b>(i, j)[0] = inframat.at<unsigned short>(i, j) / 256;
-			result.at<Vec3b>(i, j)[1] = depthmat.at<unsigned short>(i, j) / 256 * 50;
-			result.at<Vec3b>(i, j)[2] = depthmat.at<unsigned short>(i, j) % 256;
-		}
-	}
-	return result;
-}
+
 #endif // _USE_OPENCV
 
 class ljxKinectSensor
@@ -248,10 +231,27 @@ public:
     }
 #if defined (_LJX_DEBUG)
     else
-      cout << "ljxDebug: Failed to get_DepthReference" << endl;
+      cout << "ljxDebug: Failed to get DepthReference" << endl;
 #endif
     return result;
   }
+
+	HRESULT getBodyIndexFrame(IBodyIndexFrame** bodyindex)
+	{
+		HRESULT result;
+		IBodyIndexFrameReference* bodyref = NULL;
+		result = frame->get_BodyIndexFrameReference(&bodyref);
+		if (SUCCEEDED(result))
+		{
+			result = bodyref->AcquireFrame(bodyindex);
+			SafeRelease(bodyref);
+		}
+#if defined (_LJX_DEBUG)
+		else
+			cout << "ljxDebug: Failed to get BodyIndexFrame" << endl;
+#endif
+		return result;
+	}
 
 	/// <summary>
 	/// Get the color frame and store it to the pointer passed as parameter
@@ -269,7 +269,7 @@ public:
     }
 #if defined (_LJX_DEBUG)
     else
-      cout << "ljxDebug: Failed to get_ColorReference" << endl;
+      cout << "ljxDebug: Failed to get ColorReference" << endl;
 #endif
     return result;
   }
@@ -290,7 +290,7 @@ public:
     }
 #if defined (_LJX_DEBUG)
     else
-      cout << "ljxDebug: Failed to get_BodyReference" << endl;
+      cout << "ljxDebug: Failed to get BodyReference" << endl;
 #endif
     return result;
   }
@@ -311,7 +311,7 @@ public:
     }
 #if defined (_LJX_DEBUG)
     else
-      cout << "ljxDebug: Failed to get_InfrafedReference" << endl;
+      cout << "ljxDebug: Failed to get InfrafedReference" << endl;
 #endif
     return result;
   }
@@ -334,6 +334,27 @@ public:
     }
     return Mat();
   }
+
+	/// <summary>
+	/// Get the body index frame and store it to a CV_8U Mat class
+	/// </summary>
+	/// <returns>Pointer to a pointer to store the body index frame </returns>
+	Mat getBodyIndexMat()
+	{
+		HRESULT result;
+		IBodyIndexFrame* getframe = NULL;
+		result = getBodyIndexFrame(&getframe);
+		if (SUCCEEDED(result))
+		{
+			Mat mat = bodyindex2mat(getframe);
+			SafeRelease(getframe);
+			return mat;
+		}
+#ifdef _LJX_DEBUG
+		cout << "getBodyIndexFrame failed" << endl;
+#endif
+		return Mat();
+	}
 
 	/// <summary>
 	/// Get the color frame and store it to a CV_8UC3 Mat class
