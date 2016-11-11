@@ -27,7 +27,7 @@ Mat infraDepth2Mat(Mat inframat, Mat depthmat)
 		for (int j = 0; j < size.width; j++)
 		{
 			result.at<Vec3b>(i, j)[0] = inframat.at<unsigned short>(i, j) / 256;
-			result.at<Vec3b>(i, j)[1] = depthmat.at<unsigned short>(i, j) / 256 * 50;
+			result.at<Vec3b>(i, j)[1] = depthmat.at<unsigned short>(i, j) / 256;
 			result.at<Vec3b>(i, j)[2] = depthmat.at<unsigned short>(i, j) % 256;
 		}
 	}
