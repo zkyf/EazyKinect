@@ -11,10 +11,7 @@ int main()
 {
   ljxKinectSensor sensor;
   HRESULT result = sensor.init(
-    (FrameSourceTypes)(FrameSourceTypes_Depth |
-    FrameSourceTypes_Color |
-    FrameSourceTypes_Infrared |
-    FrameSourceTypes_LongExposureInfrared));
+    (FrameSourceTypes)(FrameSourceTypes_Color));
   if (FAILED(result))
   {
     cout << "Sensor init failed!" << endl; 
@@ -22,6 +19,8 @@ int main()
     return 1;
   }
   int i = 0;
+	VideoWriter videoWriter;
+	videoWriter.open("output.avi", CV_FOURCC('M', 'J', 'P', 'G'), 25.0, Size(960, 540));
   while (1)
   {
     result = sensor.update();
@@ -32,18 +31,18 @@ int main()
       //system("pause");
       //return 2;
     }
-
-    Mat depthmat = sensor.getDepthMat();
-    if(!depthmat.empty()) imshow("Depth", depthmat);
-
     Mat colormat = sensor.getColorMat();
-    if (!colormat.empty()) imshow("Color", colormat);
-
-    Mat inframat = sensor.getInfraredMat();
-    if (!inframat.empty()) imshow("Infrared", inframat);
+		if (!colormat.empty() && videoWriter.isOpened())
+		{
+			Mat haha(960, 540, CV_8UC3, Scalar::all(255));
+			resize(colormat, colormat, Size(960, 540));
+			videoWriter << haha;
+			imshow("Color", colormat);
+		}
 
     i++;
     cout << "Frame #" << i << endl;
     waitKey(1);
   }
+	return 0;
 }
