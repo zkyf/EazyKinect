@@ -197,6 +197,11 @@ public:
     if (sensor != NULL) { sensor->Close(); sensor->Release(); sensor = NULL; }
   }
 
+	ICoordinateMapper* getMapper()
+	{
+		return coordinatemapper;
+	}
+
 	void close()
 	{
 		SafeRelease(coordinatemapper);
