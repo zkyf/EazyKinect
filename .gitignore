@@ -1,4 +1,5 @@
 /*
 !/.gitignore
 !/*.cpp
+/test.cpp
 !/*.h
