@@ -16,7 +16,7 @@ using namespace std;
 /// <param name="inframat">The Mat structure containing infrared frame</param>
 /// <param name="depthmat">The Mat structure containing depth frame</param>
 /// <returns>Returns a Mat in CV_8UC3 containing the combined frame</returns>
-Mat infraDepth2Mat(Mat inframat, Mat depthmat)
+Mat InfraDepth2Mat(Mat inframat, Mat depthmat)
 {
 	if (inframat.size() != depthmat.size())
 		return Mat();
@@ -27,7 +27,7 @@ Mat infraDepth2Mat(Mat inframat, Mat depthmat)
 		for (int j = 0; j < size.width; j++)
 		{
 			result.at<Vec3b>(i, j)[0] = inframat.at<unsigned short>(i, j) / 256;
-			result.at<Vec3b>(i, j)[1] = depthmat.at<unsigned short>(i, j) / 256;
+			result.at<Vec3b>(i, j)[1] = depthmat.at<unsigned short>(i, j) / 256 * 50;
 			result.at<Vec3b>(i, j)[2] = depthmat.at<unsigned short>(i, j) % 256;
 		}
 	}
@@ -40,7 +40,7 @@ Mat infraDepth2Mat(Mat inframat, Mat depthmat)
 /// <param name="source">Input the combined mat</param>
 /// <param name="inframat">Output the Mat structure containing infrared frame</param>
 /// <param name="depthmat">Output the Mat structure containing depth frame</param>
-void mat2InfraDepth(Mat source, Mat& inframat, Mat& depthmat)
+void Mat2InfraDepth(Mat source, Mat& inframat, Mat& depthmat)
 {
 	Size size = source.size();
 	inframat = Mat(size, CV_16U, Scalar::all(0));
@@ -53,6 +53,23 @@ void mat2InfraDepth(Mat source, Mat& inframat, Mat& depthmat)
 			depthmat.at<unsigned short>(i, j) = source.at<Vec3b>(i, j)[1] * 256 + source.at<Vec3b>(i, j)[2];
 		}
 	}
+}
+
+/// <summary>
+/// Split user out of backgroung using a Mat of BodyIndex frame and a Mat of depth
+/// </summary>
+Mat SplitUserFromBackground(Mat depth, Mat body, int userID = -1)
+{
+	Mat result = depth.clone();
+	for (int i = 0; i <body.rows; i++)
+		for (int j = 0; j < body.cols; j++)
+		{
+			if (!(body.data[i*body.cols + j] == userID || (userID == -1 && body.data[i*body.cols + j] < 6)))
+			{
+				((unsigned short*)result.data)[i*body.cols + j] = 0;
+			}
+		}
+	return result;
 }
 
 #endif
