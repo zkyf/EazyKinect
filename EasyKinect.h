@@ -33,14 +33,13 @@ inline void SafeRelease(Interface *& pInterfaceToRelease)
 #if defined (_USE_OPENCV) && !defined(_OPENCV_USED)
 #define _OPENCV_USED
 #include <opencv2\opencv.hpp>
-using namespace cv;
 
 /// <summary>
-/// Convert depthframe in IDepthFrame* to a CV_16U Mat.
+/// Convert depthframe in IDepthFrame* to a CV_16U cv::Mat.
 /// </summary>
 /// <param name="depthframe">The pointer to the obtained depth frame</param>
-/// <returns>Returns a Mat in CV_16U containing the depth frame</returns>
-Mat depth2mat(IDepthFrame* depthframe)
+/// <returns>Returns a cv::Mat in CV_16U containing the depth frame</returns>
+cv::Mat depth2mat(IDepthFrame* depthframe)
 {
   IFrameDescription* size = NULL;
   depthframe->get_FrameDescription(&size);
@@ -48,7 +47,7 @@ Mat depth2mat(IDepthFrame* depthframe)
   size->get_Height(&height);
   size->get_Width(&width);
   SafeRelease(size);
-  Mat frame(height, width, CV_16U, Scalar::all(0));
+  cv::Mat frame(height, width, CV_16U, cv::Scalar::all(0));
   UINT16* depthbuffer = NULL;
   UINT buffersize = 0;
   if (SUCCEEDED(depthframe->AccessUnderlyingBuffer(&buffersize, &depthbuffer)))
@@ -65,11 +64,11 @@ Mat depth2mat(IDepthFrame* depthframe)
 }
 
 /// <summary>
-/// Convert colorframe in IColorFrame* to a CV_8UC3 Mat.
+/// Convert colorframe in IColorFrame* to a CV_8UC3 cv::Mat.
 /// </summary>
 /// <param name="colorframe">The pointer to the obtained color frame</param>
-/// <returns>Returns a Mat in CV_8UC3 containing the color frame</returns>
-Mat color2mat(IColorFrame* colorframe)
+/// <returns>Returns a cv::Mat in CV_8UC3 containing the color frame</returns>
+cv::Mat color2mat(IColorFrame* colorframe)
 {
   IFrameDescription* size = NULL;
   colorframe->get_FrameDescription(&size);
@@ -77,7 +76,7 @@ Mat color2mat(IColorFrame* colorframe)
   size->get_Height(&height);
   size->get_Width(&width);
   SafeRelease(size);
-  Mat frame(height, width, CV_8UC3, Scalar::all(0));
+  cv::Mat frame(height, width, CV_8UC3, cv::Scalar::all(0));
   static RGBQUAD* colorbuffer = new RGBQUAD[height * width];
   UINT buffersize = height * width * sizeof(RGBQUAD);
   colorframe->CopyConvertedFrameDataToArray(buffersize, reinterpret_cast<BYTE*>(colorbuffer), ColorImageFormat_Bgra);
@@ -87,9 +86,9 @@ Mat color2mat(IColorFrame* colorframe)
     {
       for (int j = 0; j < width; j++)
       {
-        frame.at<Vec3b>(i, j)[0] = colorbuffer[i*width + j].rgbBlue;
-        frame.at<Vec3b>(i, j)[1] = colorbuffer[i*width + j].rgbGreen;
-        frame.at<Vec3b>(i, j)[2] = colorbuffer[i*width + j].rgbRed;
+        frame.at<cv::Vec3b>(i, j)[0] = colorbuffer[i*width + j].rgbBlue;
+        frame.at<cv::Vec3b>(i, j)[1] = colorbuffer[i*width + j].rgbGreen;
+        frame.at<cv::Vec3b>(i, j)[2] = colorbuffer[i*width + j].rgbRed;
       }
     }
   }
@@ -97,11 +96,11 @@ Mat color2mat(IColorFrame* colorframe)
 }
 
 /// <summary>
-/// Convert infraredframe in IInfraredFrame* to a CV_16U Mat.
+/// Convert infraredframe in IInfraredFrame* to a CV_16U cv::Mat.
 /// </summary>
 /// <param name="infraframe">The pointer to the obtained infrared frame</param>
-/// <returns>Returns a Mat in CV_16U containing the infrared frame</returns>
-Mat infra2mat(IInfraredFrame* infraframe)
+/// <returns>Returns a cv::Mat in CV_16U containing the infrared frame</returns>
+cv::Mat infra2mat(IInfraredFrame* infraframe)
 {
   IFrameDescription* size = NULL;
   infraframe->get_FrameDescription(&size);
@@ -109,7 +108,7 @@ Mat infra2mat(IInfraredFrame* infraframe)
   size->get_Height(&height);
   size->get_Width(&width);
   SafeRelease(size);
-  Mat frame(height, width, CV_16U, Scalar::all(0));
+  cv::Mat frame(height, width, CV_16U, cv::Scalar::all(0));
   UINT16* buffer = NULL;
   UINT buffersize = 0;
   if (SUCCEEDED(infraframe->AccessUnderlyingBuffer(&buffersize, &buffer)))
@@ -125,7 +124,7 @@ Mat infra2mat(IInfraredFrame* infraframe)
   return frame;
 }
 
-Mat bodyindex2mat(IBodyIndexFrame* bodyindex)
+cv::Mat bodyindex2mat(IBodyIndexFrame* bodyindex)
 {
 	IFrameDescription* size = NULL;
 	bodyindex->get_FrameDescription(&size);
@@ -133,7 +132,7 @@ Mat bodyindex2mat(IBodyIndexFrame* bodyindex)
 	size->get_Height(&height);
 	size->get_Width(&width);
 	SafeRelease(size);
-	Mat frame(height, width, CV_8U, Scalar::all(0));
+	cv::Mat frame(height, width, CV_8U, cv::Scalar::all(0));
 	BYTE* buffer = NULL;
 	UINT buffersize = 0;
 	if (SUCCEEDED(bodyindex->AccessUnderlyingBuffer(&buffersize, &buffer)))
@@ -151,7 +150,7 @@ Mat bodyindex2mat(IBodyIndexFrame* bodyindex)
 	else
 		cout << "bodyindex->AccessUnderlyingBuffer failed." << endl;
 #endif
-	return Mat();
+	return cv::Mat();
 }
 
 
@@ -344,78 +343,78 @@ public:
 
 #ifdef _USE_OPENCV
 	/// <summary>
-	/// Get the depth frame and store it to a CV_16U Mat class
+	/// Get the depth frame and store it to a CV_16U cv::Mat class
 	/// </summary>
 	/// <returns>Pointer to a pointer to store the depth frame </returns>
-  Mat getDepthMat()
+  cv::Mat getDepthMat()
   {
     HRESULT result;
     IDepthFrame* getframe = NULL;
     result = getDepthFrame(&getframe);
     if (SUCCEEDED(result))
     {
-      Mat mat = depth2mat(getframe);
+      cv::Mat mat = depth2mat(getframe);
       SafeRelease(getframe);
       return mat;
     }
-    return Mat();
+    return cv::Mat();
   }
 
 	/// <summary>
-	/// Get the body index frame and store it to a CV_8U Mat class
+	/// Get the body index frame and store it to a CV_8U cv::Mat class
 	/// </summary>
 	/// <returns>Pointer to a pointer to store the body index frame </returns>
-	Mat getBodyIndexMat()
+	cv::Mat getBodyIndexMat()
 	{
 		HRESULT result;
 		IBodyIndexFrame* getframe = NULL;
 		result = getBodyIndexFrame(&getframe);
 		if (SUCCEEDED(result))
 		{
-			Mat mat = bodyindex2mat(getframe);
+			cv::Mat mat = bodyindex2mat(getframe);
 			SafeRelease(getframe);
 			return mat;
 		}
 #ifdef _LJX_DEBUG
 		cout << "getBodyIndexFrame failed" << endl;
 #endif
-		return Mat();
+		return cv::Mat();
 	}
 
 	/// <summary>
-	/// Get the color frame and store it to a CV_8UC3 Mat class
+	/// Get the color frame and store it to a CV_8UC3 cv::Mat class
 	/// </summary>
 	/// <returns>Pointer to a pointer to store the color frame </returns>
-  Mat getColorMat()
+  cv::Mat getColorMat()
   {
     HRESULT result;
     IColorFrame* getframe = NULL;
     result = getColorFrame(&getframe);
     if (SUCCEEDED(result))
     {
-      Mat mat = color2mat(getframe);
+      cv::Mat mat = color2mat(getframe);
       SafeRelease(getframe);
       return mat;
     }
-    return Mat();
+    return cv::Mat();
   }
 
 	/// <summary>
-	/// Get the infrared frame and store it to a CV_16U Mat class
+	/// Get the infrared frame and store it to a CV_16U cv::Mat class
 	/// </summary>
 	/// <returns>Pointer to a pointer to store the infrared frame </returns>
-  Mat getInfraredMat()
+  cv::Mat getInfraredMat()
   {
     HRESULT result;
     IInfraredFrame* getframe = NULL;
     result = getInfraredFrame(&getframe);
     if (SUCCEEDED(result))
     {
-      Mat mat = infra2mat(getframe);
+      cv::Mat mat = infra2mat(getframe);
       SafeRelease(getframe);
       return mat;
     }
-    return Mat();
+    return cv::Mat();
   }
 
 #endif // _USE_OPENCV
